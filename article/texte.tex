@@ -1,0 +1,481 @@
+\documentclass[]{article}
+\usepackage{etex}
+\usepackage[polutonikogreek,frenchb]{babel}
+\usepackage[LGR,T1]{fontenc}
+%\usepackage[T1]{fontenc}
+%\usepackage{lmodern}
+%\usepackage{inputenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{natbib}
+\usepackage{tikz}
+\usetikzlibrary{decorations.markings}
+
+\addto\captionsfrench{\def\tablename{Tableau}}
+\newcommand*{\andname}{and}
+      \addto \captions  {\renewcommand*{\andname}{et}} 
+
+\title{Une étude statistique élémentaire de la distribution des caractères et des mots dans \textit{Salammbô}}
+\author{Pierre Nugues\\Université de Lund}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Il est banal de le constater, partout dans le monde, la numérisation avance à une vitesse prodigieuse. La littérature et les études littéraires ne restent pas à l'écart de ce mouvement irresistible et des entreprises multiples conduisent, peu à peu, inéluctablement, à la mise à disposition sous forme informatique de tout ce que l'esprit humain a pu produire. La matière intellectuelle cristallisée dans les textes est désormais accessible à des machines qui peuvent en extraire la substance, l'analyser, l'utiliser... Dans le sillage de la société numérique, nous assistons à la naissance de ce que l'on nomme parfois les «~humanités numériques~».
+
+%Cet élan semble irreversible, pour autant qu'il reste quelque chose à numériser.
+Le but de notre article est de présenter quelques analyses statistiques élémentaires portant sur les caractères et les mots d'un texte numérisé, ne serait-ce que pour en contrôler la qualité. À l'origine de tout texte écrit, on trouve, en effet, un code alphabétique et nous décrivons ici comment extraire les symboles de ce code, calculer leur distribution statistique, analyser leur dispersion à l'aide de l'entropie et enfin, appliquer cette entropie à la mesure de la distance entre deux textes. Nous complétons cette présentation par l'exposé d'une méthode pour identifier les associations de mots les plus fréquentes dans un texte.
+
+Notre étude a nécessité l'écriture de trois petits programmes dans le langage Python que l'on pourra, nous l'espérons, réemployer à d'autres œuvres.
+
+\section{Le corpus}
+Cette étude statistique porte sur trois textes principaux. Outre \textit{Salammbô} de 1862, le corpus que nous avons constitué comprend \textit{Notre-Dame de Paris} de Victor Hugo, dans l'édition de 1832, et \textit{Le Conte de deux cités} « A Tale of Two Cities » de Charles Dickens dans sa version anglaise d'origine de 1859. Au-delà de leurs différences, ces textes partagent des traits essentiels~: leurs trois auteurs ont eu une influence immense sur la littérature mondiale ; ces romans comptent parmi leurs œuvres les plus connues et les plus lues et tous les trois portent la marque du XIX\textsuperscript{e} siècle.
+
+Pour effectuer nos calculs, nous nous sommes servis de versions informatiques de ces textes qui proviennent toutes de wikisource.org. Les textes sont des retranscriptions automatiques de livres imprimés, suivis d'une relecture et d'une correction humaines. Cependant, malgré ces corrections, les versions informatiques ne sont pas exemptes d'erreurs.
+
+En annexe, nous fournissons les programmes que nous avons écrits, ainsi que les textes eux-mêmes pour que le lecteur soucieux d'exactitude puisse reproduire les calculs, éventuellement dans des versions plus récentes ou corrigées (ou avec d'autres textes).
+
+\section{Lettres et symboles}
+\subsection{Inventaire des caractères}
+Nous avons d'abord fait l'inventaire de tous les caractères et de tous les symboles qui composent les trois œuvres à l'aide d'un premier programme~; le tableau~\ref{lettres} en donne la liste, qui compte en plus l'espace et le saut de ligne. Une première constatation est que le répertoire de caractères est plus important dans les textes français à cause des lettres accentuées que dans celui en anglais qui utilise 75 caractères différents ; une autre est que \textit{Notre-Dame de Paris} emploie plus de caractères que les deux autres du fait, notamment, de lettres grecques~: 133 caractères contre 87 pour \textit{Salammbô}.
+
+Le choix du mode de codage des caractères est essentiel dans la constitution du corpus ; la norme Unicode qui vise à répertorier l'ensemble des symboles écrits de toutes les langues s'est imposée au monde informatique pour représenter les textes et documents. Elle divise les symboles en blocs correspondant aux grandes familles d'alphabets : latin, grec, cyrillique, arabe, chinois, etc. et permet de les faire cohabiter dans un même texte comme c'est la cas dans \textit{Notre-Dame de Paris}. 
+
+Chaque lettre a son numéro Unicode propre ; même si elles sont d'apparence semblables mais de deux alphabets différents, comme le N latin et le {\selectlanguage{polutonikogreek}Ν} grec (\textit{nu}). Ceci permet à un programme informatique de les distinguer, d'appliquer des transformations automatiques, comme le passage de majuscule en minuscule, ou de les classer dans l'ordre alphabétique. La mise en minuscule d'un N latin ou grec, par exemple, produira respectivement \textit{n} et {\selectlanguage{polutonikogreek}ν}. Pour obtenir le tableau~\ref{lettres}, nous avons dû corriger les premières versions des textes de wikisource qui contenaient des erreurs de codage et utilisaient indifféremment le N latin pour le français et le grec et une lettre cyrillique pour le {\selectlanguage{polutonikogreek}Γ} grec.
+
+\begin{table}[t]
+\caption{Les caractères employés par les trois ouvrages}
+\begin{center}\begin{tabular}{lp{8cm}}
+\hline
+\multicolumn{2}{c}{\textit{Salammbô}, 87 caractères}\\
+\hline
+Minuscules&a à â æ b c ç d e é è ê ë f g h i î ï j k l m n o ô œ p q r s t u ù û v w x y z\\
+Majuscules&A À Æ B C Ç D E É F G H I J K L M N O Ô Œ P Q R S T U V X Y Z\\
+Ponctuation&- , ; : ! ? . ’ « » ( ) – …\\
+\hline
+\multicolumn{2}{c}{\textit{Notre-Dame de Paris}, 133 caractères}\\
+\hline
+Minuscules&a à á â æ b c ç d e é è ê ë f g h i î ï j k l m n ñ o ô œ p q r s t u ù û v w x y z ß\\
+Majuscules&A À Æ B C Ç D E É È Ê F G H I Î J K L M N O Ô Œ P Q R S T U V W X Y Z\\
+Grec& {\sffamily {\selectlanguage{polutonikogreek} Ἀ Ά Γ Η Κ Ν Ο ῖ α β γ δ ε έ ζ ι ί κ λ μ ν ο ό ς τ φ χ}}\\
+Chiffres&0 1 2 3 4 5 6 7 8 9\\
+Ponctuation& - , ; : ! ? . ’ « » ( ) – … \&\\
+\hline
+\multicolumn{2}{c}{\textit{A Tale of Two Cities} « Le Conte de deux cités », 75 caractères}\\
+\hline
+Minuscules&a b c d e é f g h i j k l m n o p q r s t u v w x y z \\
+Majuscules& A B C D E F G H I J K L M N O P Q R S T U V W X Y\\
+Chiffres& 1 2 5 6 7 9\\
+Ponctuation& - , ; : ! ? . ‘ ’ “ ” ( ) * —\\
+\hline
+\end{tabular} 
+\label{lettres}
+\end{center}
+\end{table}
+
+% J'ai dû exclure le symbole ϐ des lettres grecques
+
+\subsection{Effectifs de caractères}
+Nous avons ensuite dénombré chacune des lettres et des symboles. Avant d'effectuer ce décompte, nous avons appliqué une fonction de normalisation qui met toutes les lettres en majuscules et réduit les suites d'espaces et de sauts de ligne contiguës à une seule espace. 
+
+Le tableau~\ref{freq_salammbo} donne la liste de toutes les fréquences absolues de toutes les lettres de \textit{Salammbô}, sans distinction entre les majuscules et les minuscules. Ce roman emploie par ailleurs d'autres caractères : des signes de ponctuations, des guillemets et des espaces. Nous les avons rassemblés dans la catégorie \textit{Autres} sans en donner le détail. L'exécution du programme fourni en annexe permet d'obtenir toutes ces fréquences, y compris celles ne figurant pas dans le tableau.
+
+\begin{table}[t]
+\caption{Les fréquences des lettres dans \textit{Salammbô}.}
+\begin{center}\begin{tabular}{lrlrlrlrlrlrlr}
+\hline
+Let. & Fréq. & Let. & Fréq. &Let. & Fréq. & Let. & Fréq. & Let. & Fréq.\\
+\hline
+\textit{A} & 42297& \textit{I} & 33557&\textit{Q}& 3950&\textit{Y}&1228&\textit{Ê}&894\\
+\textit{B}& 5746 & \textit{J}& 1218&\textit{R}&33493 &\textit{Z}&411&\textit{Ë}&6\\
+\textit{C} & 14172 & \textit{K}& 91&\textit{S}&46662&\textit{À}&1894&\textit{Î}&276\\
+\textit{D}& 18867 & \textit{L}& 30893 & \textit{T}& 34987&\textit{Â}&603&\textit{Ï}&67\\
+\textit{E} & 70955&\textit{M} &13053 &\textit{U}&29196&\textit{Æ}&15&\textit{Ô}&396\\
+\textit{F} & 4974 &\textit{N} & 32821 &\textit{V}&6910&\textit{Ç}&452&\textit{Ù}&179\\
+ \textit{G} & 5142 &\textit{O} &22570& \textit{W}&1&\textit{È}&2000&\textit{Û}&213\\
+ \textit{H} & 5289 & \textit{P} &13116 &\textit{X}&2209&\textit{É}&7732&\textit{Œ}&120\\
+Autres&126876\\
+\hline
+\end{tabular} 
+\label{freq_salammbo}
+\end{center}
+% Commande pour obtenir le tableau: python3 symboles.py -normalise corpus/salammbo.txt
+\end{table}
+
+Il est intéressant de comparer les fréquences relatives, les pourcentages, des caractères des trois œuvres. Le tableau~\ref{freq_rel} donne ces fréquences pour les dix premières lettres de l'alphabet. Nous avons pris en compte tous les signes dans le calcul de ces pourcentages, y compris les espaces qui comptent pour 17 à 18 \% du total dans les trois romans. Nous constatons que \textit{Salammbô} et \textit{Notre-Dame de Paris} ont des distributions à peu près semblables, alors que certaines lettres ont des fréquences très différentes dans \textit{Le Conte de deux cités}, comme le G, le H et le J. Ceci est dû, bien sûr, à la langue, le français pour les deux premières et l'anglais pour la troisième.
+
+%Le lecteur pourra lui-même exécuter le programme en annexe et calculer les fréquences de toutes les autres lettres.
+
+\begin{table}[htdp]
+\caption{Distribution fréquentielle de 10 lettres dans les trois œuvres ; tous les caractères sont pris en compte dans le calcul de ces pourcentages, y compris les espaces. S : \textit{Salammbô}, ND : \textit{Notre-Dame de Paris}, TTC : \textit{Le Conte de deux cités}}
+\begin{center}\begin{tabular}{lrrrrrrrrrr}
+\hline
+&A&B&C&D&E&F&G&H&I&J\\
+\hline
+S&6,87& 0,93& 2,30&3,07&11,53&0,81&0,84&0,86& 5,45& 0,20\\
+ND& 6,16&0,80&2,47& 2,96&11,78& 0,87&0,88&0,84&5,73& 0,38\\
+TTC&6,27&1,08&1,76&3,66&9,70&1,75&1,61&5,11&5,30& 0,08\\
+\hline
+\end{tabular} 
+\end{center}
+\label{freq_rel}
+\end{table}
+
+\section{L'entropie}
+\subsection{Vue d'ensemble}
+Le tableau~\ref{freq_rel} nous montre que la distribution des lettres n'est pas uniforme ; elle peut varier de moins de 1 \% pour la lettre \textit{F} à plus de 10 \% pour le \textit{E}. L'entropie de \citet{Shannon1948} est un moyen de caractériser cette dispersion au moyen d'une mesure unique.
+
+Pour aborder cette mesure, imaginons d'abord un alphabet très simple constitué de deux caractères : \textit{a} et \textit{b}. On définit l'entropie $H$ d'un texte $X$ composé de ces deux caractères par la formule suivante :
+\[
+H(X) = - P(a)\log _2 P(a) - P(b)\log _2 P(b),
+\]
+où $P(a)$ et $P(b)$ sont les probabilités des caractères $a$ et $b$ dans le texte et $\log_2$, le logarithme en base 2. Pour estimer la probabilité d'un caractère, on prend simplement sa fréquence relative dans le texte.
+Ainsi, un texte de 10 000 caractères composé d'un seul \textit{a} et de 9 999 \textit{b} aura une entropie de 
+\[
+- \frac{1}{10 000} \log_2 \frac{1}{10 000} - \frac{9 999}{10 000} \log_2 \frac{9 999}{10 000} = 0,001473,
+\]
+ tandis qu'un texte composé de 5 000 \textit{a} et de 5 000 \textit{b} aura une entropie de 
+ \[
+ - \frac{5 000}{10 000} \log_2 \frac{5 000}{10 000} - \frac{5 000}{10 000} \log_2 \frac{5 000}{10 000} = 1.
+ \]
+
+La figure~\ref{entropie} représente la fonction entropie quand on fait varier la proportion de \textit{a} dans le texte de 0 à 100 \%. Si cette proportion est nulle, l'entropie est nulle ; s'il n'y a que des \textit{a}, la proportion vaut 1 et l'entropie vaut aussi 0 ; enfin, s'il y a autant de \textit{a} que de \textit{b}, l'entropie est maximale et elle vaut 1.  
+
+Pour décrire l'entropie de façon plus concrète, on peut la relier à l'incertitude dans une expérience où on tirerait un caractère du texte au hasard.  Le résultat du tirage est le plus incertain quand les deux caractères sont en nombres égaux~; il y a alors autant de chance d'avoir un \textit{a} qu'un \textit{b} et l'entropie est maximale ; elle est minimale lorsque qu'on n'a que des \textit{a} ou que des \textit{b}~; dans ce cas, on est  sûr du caractère sur lequel on va « tomber ».
+
+\begin{figure}
+% Tikz pour l'impatient
+% Définition des nouvelles options xmin, xmax, ymin, ymax
+% Valeurs par défaut : -3, 3, -3, 3
+\tikzset{
+    xmin/.store in=\xmin, xmin/.default=-3, xmin=-3,
+    xmax/.store in=\xmax, xmax/.default=3, xmax=3,
+    ymin/.store in=\ymin, ymin/.default=-3, ymin=-3,
+    ymax/.store in=\ymax, ymax/.default=3, ymax=3,
+}
+% Commande qui trace la grille entre (xmin,ymin) et (xmax,ymax)
+\newcommand {\grille}
+    {\draw[help lines] (\xmin,\ymin) grid (\xmax,\ymax);}
+% Commande \axes
+\newcommand {\axes} {
+    \draw[->] (\xmin,0) -- (\xmax,0);
+    \draw[->] (0,\ymin) -- (0,\ymax);
+}
+% Commande qui limite l’affichage à (xmin,ymin) et (xmax,ymax)
+\newcommand {\fenetre}
+    {\clip (\xmin,\ymin) rectangle (\xmax,\ymax);}
+
+\begin{center}
+\scalebox{2}
+{\begin{tikzpicture}[>=stealth,xmin=-0.5,xmax=2,ymin=-0.5,ymax=1.5]
+%\grille 
+\axes  
+%\fenetre
+  \draw[color=blue,line width=1pt] plot[mark=none, samples=500,domain=0.00001:0.999999] ({\x},{ -\x*ln(\x)/ln(2) - (1-\x)*ln(1-\x)/ln(2) });
+  \foreach \k in {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}
+    \draw[black] (0.1*\k, 0) -- (0.1*\k, 0.05);
+  \draw[black] (0, 1) -- (0.05, 1);
+\end{tikzpicture}}
+\end{center}
+\caption{La fonction entropie : $-x \log_2 x -(1 - x) \log_2 (1 - x)$ où $x$ représente la proportion de $a$ dans le texte variant de 0 à 1}
+\label{entropie}
+\end{figure}
+
+\subsection{Entropie d'un texte}
+L'entropie de Shannon $H$ se généralise à un nombre quelconque de caractères de la manière suivante~:
+
+\[
+H(X) = - \sum\limits_{x \in X} {P(x)\log _2 P(x)},
+\]
+où $X$ est la suite de caractères d'un texte, y compris l'espace et les sauts de lignes ; $x$, un caractère appartenant à cette suite et $P(x)$, la probabilité du caractère $x$ qu'on estime en calculant sa fréquence relative dans le texte ; par exemple dans \textit{Salammbô}, il y a 70 955 lettres \textit{E} (majuscules et minuscules) et 615 531 caractères au total en éliminant les espaces doubles. Nous obtenons :
+\[
+P(E) = \frac{70 955}{615 531} = 0,1153,
+\]
+qui nous permet de calculer le terme: 
+ \[
+ - P(E) \log_2 P(E) = - \frac{70 955}{615 531} \log_2 \frac{70 955}{615 531} = 0,3593.
+ \]
+ 
+L'entropie est la somme de ces termes appliqués à toutes les lettres.  Pour \textit{Salammbô}, \textit{Notre-Dame de Paris} et \textit{Le Conte de deux cités}, les entropies sont respectivement de 4,40, 4,46 et 4,43 en respectant la distinction majuscule-minuscule.
+
+
+Pour chacun de ces textes, l'entropie théorique maximale est fonction du nombre de leurs caractères et elle serait atteinte si tous les caractères étaient équiprobables ; un caractère pris au hasard pourrait alors avoir n'importe quelle valeur avec autant de chance ; l'entropie serait égale dans ce cas  à $\log_2 N$ où $N$ est le nombre de caractères. Pour \textit{Salammbô} et ses 87 caractères différents, l'entropie maximale serait donc de $\log_2 87 = 6,44$.
+
+Comme dans les trois textes les caractères ne sont pas équiprobables, l'entropie est beaucoup plus basse et elle reflète le fait que les chances d'un caractère pris au hasard  sont inégales ; un \textit{E} par exemple est beaucoup plus probable qu'un \textit{W}. L'information du texte, en terme de symboles, est alors moins dense. L'entropie donne ainsi une idée de la diversité de leur distribution. Il est cependant délicat d'aller beaucoup plus loin dans l'interprétation de ces chiffres. 
+
+%Une conséquence pratique cependant est que l'application d'un programme de compression à ces textes donne un taux légèrement plus plus élevé pour \textit{Salammbô} que pour les deux autres.
+%
+%\begin{table}[htdp]
+%\caption{Entropie des trois textes et taux de compression obtenus avec \texttt{gzip}. S : \textit{Salammbô}, ND : \textit{Notre-Dame de Paris}, TTC : \textit{Le Conte de deux cités}}
+%\begin{center}\begin{tabular}{lrrrr}
+%\hline
+%Texte&Entropie&Taille du fichier&Comprimé&Taux\\
+%\hline
+%S&4,40& 645 618& 233 760&2,76\\
+%ND& 4,46&1 079 973&392 948& 2,74\\
+%TTC&4,43&768 996&282 975&2,72\\
+%\hline
+%\end{tabular} 
+%\end{center}
+%\label{entropie}
+%\end{table}
+
+
+\section{L'entropie relative}
+Si on ne peut conclure aisément du sens de l'entropie d'un texte isolé, il est possible de la modifier légèrement pour comparer deux distributions. L'examen rapide des trois histogrammes du tableau~\ref{freq_rel} nous donne à penser que \textit{Salammbô} et \textit{Notre-Dame de Paris} sont plus proches entre elles que \textit{Le Conte de deux cités}, mais il ne nous donne pas une quantification de cette proximité. L'entropie relative ou divergence $D_{KL}(P||Q)$ de $Q$ par rapport à $P$ de \citet{Kullback1951}, où $P$ et $Q$ sont deux distributions, fournit un modèle mathématique pour ceci.
+
+Pour définir cette divergence, on introduit d'abord un terme, l'entropie croisée, de la façon suivante~:
+\[
+H(P,Q) = - \sum\limits_{x \in X} {P(x)\log_2 Q(x).} 
+\]
+où il est facile de voir que $H(P, P)$ est l'entropie de Shannon. La divergence de $Q$ par rapport à $P$ correspond à la différence de ces deux entropies :
+\[
+\begin{array}{lcl}
+D_{KL}(P||Q) &=& H(P, Q) - H(P, P),\\
+&=& \sum\limits_{x \in X} {P(x)\log_2 P(x)} - \sum\limits_{x \in X} {P(x)\log_2 Q(x)}.
+\end{array}
+\]
+Cette divergence, toujours positive, permet de quantifier la similitude de deux distributions de probabilités où $P$ représente, de façon typique, une distribution à tester et $Q$, une distribution qui lui sert de modèle. On peut considérer la divergence comme une sorte de distance. Elle est asymétrique, cependant, $D_{KL}(P||Q) \neq D_{KL}(Q||P)$, et n'en suit donc pas la définition mathématique rigoureuse.
+
+Nous avons calculé la divergence entre les distributions de caractères de \textit{Salammbô} et celles des deux autres textes. Du fait de l'asymétrie entre les termes $P$ et $Q$, nous l'avons prise à partir de \textit{Salammbô} et à partir de l'œuvre considérée. Enfin, nous avons ajouté la nouvelle \textit{Un Cœur simple} à notre corpus pour mesurer le divergence entre deux œuvres de Flaubert.
+
+
+Le tableau~\ref{entropie_x} présente le détail des  résultats que nous avons obtenus et qui sont conformes à ce que nous attendions. La divergence entre \textit{Salammbô} et \textit{Un Cœur simple} est très faible, quel que soit le sens du calcul ; elle est double entre \textit{Salammbô} et \textit{Notre-Dame de Paris} et beaucoup plus élevée avec \textit{Le Conte de deux cités} en anglais.
+
+\begin{table}[htdp]
+\caption{Divergence entre les œuvres du corpus et \textit{Salammbô}, $D_{KL}(P||Q)$. La divergence de Kullback-Leibler n'est pas symétrique et nous l'avons calculée à partir de \textit{Salammbô} et à partir de l'œuvre considérée. UCS : \textit{Un Cœur simple}, ND : \textit{Notre-Dame de Paris}, TTC : \textit{Le Conte de deux cités}}
+\begin{center}\begin{tabular}{llrrr}
+\hline
+$P$&$Q$&Entropie de $P$&Entr. croisée&Diff.\\
+\hline
+\hline
+\textit{Salammbô}&\textit{Salammbô}&4,4010& 4,4010&0\\
+\hline
+\textit{Salammbô}&UCS& 4,4010&4,4092&0,0082\\
+\textit{Salammbô}&ND&4,4010&4,4187&0,0177\\
+\textit{Salammbô}&TTC&4,4010&4,5501&0,1490\\
+\hline
+UCS&\textit{Salammbô}&4,4284&4,4349&0,0065\\
+ND&\textit{Salammbô}&4,4624&4,4747&0,0123\\
+TTC&\textit{Salammbô}&4,4294&4,8077&0,3783\\
+\hline
+\end{tabular} 
+\end{center}
+\label{entropie_x}
+\end{table}
+
+
+\section{Des lettres aux mots}
+\subsection{Découpage d'un texte en mots}
+Après l'analyse statistique des caractères, on peut facilement passer à celle des mots. Pour ceci, on doit d'abord découper le texte. Cette étape, qui paraît simple à première vue, peut se révéler délicate dans certains cas : comment traiter l'apostrophe, par exemple ? Si on considère qu'elle sépare deux mots dans l'expression \textit{l'avenue}, doit-on appliquer la même règle à \textit{aujourd'hui} ? 
+
+Nous avons écrit un programme de découpage très simple qui se fonde sur l'analyse des caractères du tableau~\ref{lettres} et où nous avons posé la règle suivante~: toute espace et toute ponctuation délimitent un mot ; nous réduisons par ailleurs les suites contiguës de plusieurs de ces « délimiteurs » à un seul délimiteur.
+
+Avec cette procédure de découpage et en mettant tous les mots en minuscules, nous obtenons un total de 105 129 mots pour \textit{Salammbô} dont 11 144 mots différents, respectivement 183 244 et 16 519 mots pour \textit{Notre-Dame de Paris} et 138 193 et 9 721 pour \textit{Un Conte de deux villes}.
+Le tableau~\ref{mots} donne la liste des 20 mots les plus fréquents des trois œuvres où nous voyons que \textit{Salammbô} se distingue par l'emploi plus fréquent du pronom personnel réfléchi \textit{se}, tandis que \textit{Notre-Dame de Paris} utilise plus de conjonctions ou de pronoms \textit{que} ainsi que de verbes \textit{être}.
+
+\begin{table}[htdp]
+\caption{Fréquences absolues des 20 premiers mots. Pour \textit{Salammbô}, les mots en gras sont ceux qui n'apparaissent pas dans les vingt mots les plus fréquents de \textit{Notre-Dame de Paris} et réciproquement}
+\begin{center}\begin{tabular}{lrlr|lrlr|lrlr}
+\multicolumn{4}{c}{\textit{Salammbô}}&\multicolumn{4}{c}{\textit{Notre-Dame de Paris}}&\multicolumn{4}{c}{\textit{Le Conte de deux cités}}\\
+\hline
+&1-10&&11-20&&1-10&&11-20&&1-10&&11-20\\
+\hline
+\hline
+les &4230&un& 1407&de& 8262&en&2210&the&8021&he& 1854\\
+de & 3966& en&1321&la& 5397&une&2047&and&4999&was& 1774\\
+des & 3097&\textbf{se}& 1239&et &4583&\textbf{que}&2029&of& 4008&you& 1427\\
+et & 2717&\textbf{s}& 1100&le& 4122&qui&1978&to& 3570&with& 1311\\
+la & 2662&dans& 1097&à& 3498&\textbf{du}&1594&a&2947&had& 1305\\
+le &1881&une& 1060&l& 3478&\textbf{est}& 1592&in& 2599&as& 1163\\
+il & 1767&\textbf{ils}& 988&il& 2980&\textbf{qu}& 1475&it& 2066&her& 1044\\
+d& 1724&\textbf{sur}& 926&un& 2603&des& 1457&his& 2011&at& 1033\\
+à &1692&\textbf{on}& 755&les& 2456&\textbf{était}& 1426&i& 1987&him& 976\\
+l& 1527&qui& 749&d& 2222&dans&1388&that& 1941&for&960\\
+\hline
+\end{tabular} 
+\end{center}
+\label{mots}
+\end{table}  
+  
+\subsection{Associations de mots}
+Au-delà des mots isolés, on peut chercher à identifier les associations de mots propre à une œuvre ou à un auteur. L'information mutuelle $I(m_i ,m_j )$ est une mesure mathématique de ces associations que l'on définit par la formule suivante \citep{Fano1961}~:
+
+\[
+I(m_i ,m_j ) = \log_2 \frac{P(m_i ,m_j )}{P(m_i )P(m_j )},
+\]
+où $m_i$ et $m_j$ sont deux mots contigus dans un texte. L'information mutuelle de deux mots sera positive s'ils apparaissent plus souvent ensemble que séparément, nulle s'ils sont indépendants et négative s'ils sont plus souvent séparés qu'ensemble.
+
+Pour mesurer l'information mutuelle, on doit d'abord identifier toutes les suites de deux mots adjacents, les bigrammes, et dénombrer chacun de ces bigrammes dans chacun des textes. On procède de même avec les mots.  On calcule ensuite l'information mutuelle de chaque bigramme trouvé par une simple division des fréquences, ainsi par exemple, le bigramme \textit{les barbares} apparaît 157 fois dans \textit{Salammbô} ; sa fréquence relative est de 157/105128 = 0,00149 ; la fréquence relative de \textit{les} est de 4230/105129 = 0,04024 ; \textit{barbares} apparaît 237 fois ; sa fréquence relative est de 237/105129 = 0,00225. L'information mutuelle du bigramme \textit{les barbares} est donc~:
+\[
+I(\textrm{les}, \textrm{barbares}) = \log_2 (\frac{157}{4230 \cdot 237} \cdot \frac{105129^2}{105128}) = 4,0412.
+\]
+
+Une fois l'information mutuelle calculée, on classe les bigrammes par valeurs croissantes pour déterminer les associations les plus étroites. Les valeurs maximales correspondent à des mots et des bigrammes qui n'apparaissent qu'une seule fois dans un texte, comme l'expression \textit{vagabondage perpétuel} où \textit{vagabondage}, ainsi que \textit{perpétuel} sont des emplois uniques dans \textit{Salammbô}. Il est difficile de tirer des conclusions pour de telles expressions et nous avons posé un seuil de fréquence de 25. Le tableau~\ref{info_mutuelle} présente les 20 associations les plus fortes dans \textit{Salammbô} et \textit{Notre-Dame de Paris} pour des expressions apparaissant au moins 25 fois.
+
+Sans prétendre à une analyse littéraire, deux traits propres à chacune des œuvres ressortent de ces chiffres~: la prédominance des lieux, de l'espace et de sa description dans \textit{Salammbô} avec les expressions \textit{au milieu}, \textit{au bord}, \textit{au fond}, \textit{par dessus}, \textit{l'acropole} et \textit{l'horizon} ; le contraste avec \textit{Notre-Dame de Paris} est saisissant où ce sont les personnes et les expressions verbales qui dominent dans le tableau~: \textit{Louis XI}, \textit{dom Claude}, \textit{jeune fille}, \textit{maître Jacques}, \textit{nous avons}, \textit{eut été}.
+
+\begin{table}[htdp]
+\caption{Les 20 plus hautes informations mutuelles des bigrammes apparaissant au moins 25 fois}
+\begin{small}
+\begin{center}\begin{tabular}{lrlr|lrlr}
+\multicolumn{4}{c}{\textit{Salammbô}}&\multicolumn{4}{c}{\textit{Notre-Dame de Paris}}\\
+\hline
+&1-10&&11-20&&1-10&&11-20\\
+\hline
+\hline
+ peut être &10,48& c était &6,89& aujourd hui &11,51& quelque chose &8,60\\
+ narr havas &10,40& au bord &6,70& quinzième siècle &11,26& j ai &8,35\\
+ quelques uns &9,69& au fond &6,67& louis xi &10,87& cria t &8,34\\
+ quelque chose &9,51& s écria &6,58& dom claude &10,10& maître jacques &8,25\\
+ j ai &9,43& ceux qui &6,28& claude frollo &9,66& nous avons &8,18\\
+ sans doute &9,30& du côté &6,23& notre dame &9,34& ses lèvres &7,59\\
+ c est &7,76& se trouvait &6,16& peut être &8,92& eût été &7,50\\
+ ou bien &7,43& par dessus &6,12& sans doute &8,80& je vais &7,45\\
+ au milieu &7,13& l acropole &6,11& jeune fille &8,70& s approcha &7,30\\
+ tandis que &7,07& l horizon &6,01& eh bien &8,65& s écria &7,30\\
+\hline
+\end{tabular} 
+\end{center}
+\end{small}
+\label{info_mutuelle}
+\end{table}  
+ 
+
+%6,00578114798566 	 l horizon 	 28 	 1527 	 30
+%6,105316821536575 	 l acropole 	 32 	 1527 	 32
+%6,119558744112354 	 par dessus 	 35 	 735 	 72
+%6,161728198356293 	 se trouvait 	 27 	 1239 	 32
+%6,227501874713526 	 du côté 	 30 	 690 	 61
+%6,284982353319725 	 ceux qui 	 55 	 99 	 749
+%6,578513359921404 	 s écria 	 34 	 1100 	 34
+%6,669671345929833 	 au fond 	 48 	 679 	 73
+%6,6986731104747905 	 au bord 	 53 	 679 	 79
+%6,887673576304217 	 c était 	 124 	 218 	 505
+%7,0702088277296555 	 tandis que 	 26 	 36 	 565
+%7,127692015759423 	 au milieu 	 112 	 679 	 124
+%7,425714516295733 	 ou bien 	 29 	 143 	 124
+%7,76161375011145 	 c est 	 63 	 218 	 140
+%9,30025821714884 	 sans doute 	 28 	 161 	 29
+%9,43387365488984 	 j ai 	 31 	 76 	 62
+%9,510013422873925 	 quelque chose 	 43 	 100 	 62
+%9,69442065486454 	 quelques uns 	 61 	 86 	 90
+%10,396398949471177 	 narr havas 	 78 	 78 	 78
+%10,478208454125719 	 peut être 	 30 	 33 	 67
+%
+%7,304741584070687 	 s approcha 	 26 	 1159 	 26
+%7,304741584070687 	 s écria 	 79 	 1159 	 79
+%7,450064413306836 	 je vais 	 34 	 1018 	 35
+%7,495652377130041 	 eût été 	 29 	 195 	 151
+%7,585091733648453 	 ses lèvres 	 29 	 675 	 41
+%8,175844629359998 	 nous avons 	 41 	 433 	 60
+%8,253252533897458 	 maître jacques 	 36 	 235 	 92
+%8,341464125409924 	 cria t 	 31 	 83 	 211
+%8,347090872264062 	 j ai 	 129 	 317 	 229
+%8,601888074948569 	 quelque chose 	 87 	 223 	 184
+%8,654442124126216 	 eh bien 	 46 	 57 	 367
+%8,704196536136173 	 jeune fille 	 116 	 186 	 274
+%8,798908260805087 	 sans doute 	 49 	 336 	 60
+%8,922469026812 	 peut être 	 79 	 117 	 255
+%9,335624886625894 	 notre dame 	 150 	 239 	 178
+%9,660190858110264 	 claude frollo 	 42 	 164 	 58
+%10,104792814931244 	 dom claude 	 68 	 69 	 164
+%10,86869659096195 	 louis xi 	 57 	 98 	 57
+%11,259775967632907 	 quinzième siècle 	 26 	 29 	 67
+%11,506126511577243 	 aujourd hui 	 63 	 63 	 63
+%
+%6,533346914433204 	 my dear 	 54 	 655 	 123
+%6,604446617465379 	 more than 	 40 	 263 	 216
+%6,822026455264377 	 mr stryver 	 55 	 622 	 108
+%6,909473535733744 	 monsieur defarge 	 31 	 118 	 302
+%7,111056069631114 	 mr barsad 	 28 	 622 	 45
+%7,523028389092094 	 mr cruncher 	 101 	 622 	 122
+%7,535836057119925 	 miss manette 	 51 	 233 	 163
+%7,614893157670822 	 tellson s 	 86 	 92 	 659
+%7,685929752728687 	 mr lorry 	 342 	 622 	 369
+%8,08764032726162 	 young jerry 	 27 	 127 	 108
+%8,176200575003515 	 madame defarge 	 122 	 193 	 302
+%8,248625054769768 	 doctor manette 	 80 	 223 	 163
+%8,598255486522696 	 jacques three 	 26 	 73 	 127
+%8,663059768643542 	 sydney carton 	 35 	 76 	 157
+%8,992402530488697 	 charles darnay 	 54 	 99 	 148
+%9,157691085357131 	 miss pross 	 156 	 233 	 162
+%9,249776526742872 	 don t 	 135 	 135 	 227
+%9,450210406646331 	 young lady 	 36 	 127 	 56
+%9,797465641038311 	 wine shop 	 51 	 120 	 66
+%11,161760490539848 	 saint antoine 	 50 	 58 	 52
+%
+% peut être 	10,48	 c était 	6,89	 aujourd hui 	11,51	 quelque chose 	8,60	 saint antoine 	11,16	 young jerry 	8,09
+% narr havas 	10,40	 au bord 	6,70	 quinzième siècle 	11,26	 j ai 	8,35	 wine shop 	9,80	 mr lorry 	7,69
+% quelques uns 	9,69	 au fond 	6,67	 louis xi 	10,87	 cria t 	8,34	 young lady 	9,45	 tellson s 	7,61
+% quelque chose 	9,51	 s écria 	6,58	 dom claude 	10,10	 maître jacques 	8,25	 don t 	9,25	 miss manette 	7,54
+% j ai 	9,43	 ceux qui 	6,28	 claude frollo 	9,66	 nous avons 	8,18	 miss pross 	9,16	 mr cruncher 	7,52
+% sans doute 	9,30	 du côté 	6,23	 notre dame 	9,34	 ses lèvres 	7,59	 charles darnay 	8,99	 mr barsad 	7,11
+% c est 	7,76	 se trouvait 	6,16	 peut être 	8,92	 eût été 	7,50	 sydney carton 	8,66	 monsieur defarge 	6,91
+% ou bien 	7,43	 par dessus 	6,12	 sans doute 	8,80	 je vais 	7,45	 jacques three 	8,60	 mr stryver 	6,82
+% au milieu 	7,13	 l acropole 	6,11	 jeune fille 	8,70	 s approcha 	7,30	 doctor manette 	8,25	 more than 	6,60
+% tandis que 	7,07	 l horizon 	6,01	 eh bien 	8,65	 s écria 	7,30	 madame defarge 	8,18	 my dear 	6,53
+
+\section{Conclusion}
+Dans cette petite analyse, nous avons présenté les notions d'entropie et d'entropie relative et nous les avons appliquées à trois textes pour les comparer à \textit{Salammbô}. Dans chacun des exemples, nous avons pu voir que les résultats numériques correspondaient bien à l'idée que nous pouvions avoir de la proximité entre ces textes. Nous avons aussi montré comment les mots les plus fréquents ou les associations de mots récurrentes pouvaient mettre en lumière certaines marques distinctives d'une œuvre.
+
+Le lecteur intéressé pourra reprendre les programmes que nous avons créés, les modifier, les améliorer ou leur adjoindre d'autres fonctions. Nous espérons au bout du compte que notre petite étude pourra servir les études littéraires et donner lieu à des analyses encore plus précises de l'œuvre de Flaubert. 
+
+\section*{Remerciements}
+Je voudrais remercier chaleureusement Monsieur François Lapelerie qui m'a invité à publier ce travail pour le site d'études sur Flaubert de l'université de Rouen et qui m'a ainsi permis de renouveler et d'approfondir une étude précédemment esquissée dans mon livre sur le traitement des langues \citep{nugues2006,nugues2014}.
+
+\section*{Annexe}
+Pour reproduire les analyses de cet article, nous avons mis à disposition le corpus des quatre textes provenant de Wikisource et les trois programmes en Python~:
+
+\begin{enumerate}
+\item Le programme \verb=symboles.py= calcule les fréquences relatives d'un texte. Il s'utilise de la manière suivante :
+\begin{verbatim}
+python3 symboles.py -[normalise] fichier
+\end{verbatim}
+où l'option facultative \verb=normalise= transforme toutes les lettres en majuscules et \verb=fichier= contient le texte à analyser.
+
+On extrait l'ensemble des caractères de \textit{Salammbô} avec leurs fréquences par la commande suivante :
+\begin{verbatim}
+python3 symboles.py corpus/salammbo.txt
+\end{verbatim}
+
+\item Le programme \verb=divergence.py= calcule la divergence entre deux œuvres :
+\begin{verbatim}
+python3 divergence.py fichier_p fichier_q
+\end{verbatim}
+Par exemple :
+\begin{verbatim}
+python3 divergence.py corpus/coeursimple.txt corpus/salammbo.txt
+\end{verbatim}
+\textit{Nota bene:} Le programme de calcul de $D_{KL}(P||Q)$ est assez simple à écrire, si ce n'est que l'on doit traiter le problème pratique suivant~: la divergence de \citeauthor{Kullback1951} n'est pas définie lorsqu'un caractère a une fréquence nulle dans la distribution $Q$ ; on a alors une division par zéro. Ce cas se présente concrètement dans notre corpus, avec, par exemple, le caractère ñ qui est absent aussi bien de  \textit{Salammbô} que du  \textit{Conte de deux cités}, mais qu'on trouve dans \textit{Notre-Dame de Paris} dans la phrase~:
+\begin{quote}
+Señor caballero, para comprar un pedaso de pan !
+\end{quote}
+Pour le résoudre, nous avons fait l'approximation suivante~: lors du calcul de $D_{KL}(P||Q)$, nous n'avons considéré que les caractères communs aux deux distributions $P$ et $Q$ ; pour ñ, ceci signifie que nous l'avons tout simplement ignoré. Si cette façon de faire n'est pas complètement satisfaisante d'un point de théorique, elle simplifie beaucoup les calculs. Une amélioration possible du programme serait d'estimer les probabilités des fréquences nulles par une technique de lissage, \citet{Laplace1820} ou autre.
+
+\item Le programme \verb=mots.py= calcule les fréquences des mots, des bigrammes et l'information mutuelle. Il s'utilise de la manière suivante :
+
+\begin{verbatim}
+python3 mots.py fichier option
+\end{verbatim}
+où \verb=option= peut être soit \verb=mots=, \verb=bigrammes=, ou \verb=im= suivi d'une valeur de seuil.
+Par exemple
+\begin{itemize}
+\item \begin{verbatim}
+python3 mots.py corpus/salammbo.txt mots
+\end{verbatim}
+calcule les fréquences des mots dans \textit{Salammbô}.
+
+\item \begin{verbatim}
+python3 mots.py corpus/notredame.txt bigrammes
+\end{verbatim}
+calcule les fréquences des bigrammes dans \textit{Notre-Dame de Paris}.
+
+\item \begin{verbatim}
+python3 mots.py corpus/notredame.txt im 25
+\end{verbatim}
+calcule l'information mutuelle des bigrammes dans \textit{Notre-Dame de Paris} et affiche les valeurs les plus hautes. Le seuil de bigrammes est de 25. 
+\end{itemize}
+\end{enumerate}
+\bibliographystyle{francais}
+\bibliography{biblio}
+\end{document}
