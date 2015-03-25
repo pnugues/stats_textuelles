@@ -30,7 +30,7 @@ Pour reproduire les analyses de l'article, vous avez le corpus des quatre textes
     
     `python3 mots.py fichier option`
 
-    où option peut être soit `mots`, `bigrammes`, ou `im` suivi d’une valeur de seuil. Par exemple
+    où `option` peut être soit `mots`, `bigrammes`, ou `im` suivi d’une valeur de seuil. Par exemple
     *  `python3 mots.py corpus/salammbo.txt mots`
 
       calcule les fréquences des mots dans *Salammbô*.
