@@ -1,11 +1,13 @@
 import sys
 from math import log
 
+
 def compte_lettres(texte):
     lettres = {}
     for c in texte:
         lettres[c] = lettres.get(c, 0) + 1
     return lettres
+
 
 def frequences_relatives(lettres):
     frequences = {}
@@ -13,23 +15,26 @@ def frequences_relatives(lettres):
     for lettre in lettres:
         nbr_car += lettres[lettre]
     for lettre in lettres:
-        frequences[lettre] = lettres[lettre]/nbr_car
+        frequences[lettre] = lettres[lettre] / nbr_car
     return frequences
+
 
 def entropie(frequence_relative):
     entropie = 0.0
     for lettre in frequence_relative:
         entropie -= frequence_relative[lettre] * log(frequence_relative[lettre])
-    entropie = entropie/log(2)
+    entropie = entropie / log(2)
     return entropie
+
 
 def entropie_croisee(frequence_p, frequence_q):
     entropie_croisee = 0
     for lettre in frequence_p:
-        if frequence_q.get(lettre, 0) != 0: # Ici, on ignore les symboles manquants. Un lissage serait préférable
+        if frequence_q.get(lettre, 0) != 0:  # Ici, on ignore les symboles manquants. Un lissage serait préférable
             entropie_croisee -= frequence_p[lettre] * log(frequence_q[lettre])
-    entropie_croisee = entropie_croisee/log(2)
+    entropie_croisee = entropie_croisee / log(2)
     return entropie_croisee
+
 
 fichier_p = sys.argv[1]
 fichier_q = sys.argv[2]

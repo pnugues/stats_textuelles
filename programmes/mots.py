@@ -1,16 +1,21 @@
-import sys, re, operator
+import operator
+import re
+import sys
 from math import log
+
 
 def decoupe_mots(texte):
     mots = re.split('[\s\-,;:!?.’\'«»()–...&‘’“”*—]+', texte)
     mots.remove('')
     return mots
 
+
 def compte_mots(mots):
     c_mots = {}
     for mot in mots:
         c_mots[mot] = c_mots.get(mot, 0) + 1
     return c_mots
+
 
 def compte_bigrammes(mots):
     c_bigrammes = {}
@@ -21,11 +26,12 @@ def compte_bigrammes(mots):
         i = i + 1
     return c_bigrammes
 
+
 def info_mutuelle(c_mots, c_bigrammes, taille):
     c_info_mutuelle = {}
     for bigramme in c_bigrammes.keys():
         mot = bigramme.split()
-        c_info_mutuelle[bigramme] = log(taille * c_bigrammes[bigramme]/(c_mots[mot[0]] * c_mots[mot[1]]))/log(2)
+        c_info_mutuelle[bigramme] = log(taille * c_bigrammes[bigramme] / (c_mots[mot[0]] * c_mots[mot[1]])) / log(2)
     return c_info_mutuelle
 
 
@@ -36,11 +42,11 @@ if len(sys.argv) < 3:
 else:
     fichier = sys.argv[1]
     option = sys.argv[2]
-    
+
 texte = open(fichier).read()
 texte = texte.lower()
 mots = decoupe_mots(texte)
-#print(mots)
+# print(mots)
 c_mots = compte_mots(mots)
 c_bigrammes = compte_bigrammes(mots)
 c_bigrammes_ordonnés = sorted(c_bigrammes.items(), key=operator.itemgetter(1))
@@ -61,7 +67,8 @@ elif option == "im":
     for bigramme_im in c_info_mutuelle_ordonnée:
         if c_bigrammes[bigramme_im[0]] >= seuil:
             mots_du_bigramme = bigramme_im[0].split()
-            print(c_info_mutuelle[bigramme_im[0]], "\t", bigramme_im[0], "\t", c_bigrammes[bigramme_im[0]], "\t", c_mots[mots_du_bigramme[0]], "\t", c_mots[mots_du_bigramme[1]])
+            print(c_info_mutuelle[bigramme_im[0]], "\t", bigramme_im[0], "\t", c_bigrammes[bigramme_im[0]], "\t",
+                  c_mots[mots_du_bigramme[0]], "\t", c_mots[mots_du_bigramme[1]])
 else:
     print("Usage: python3 mots.py fichier option")
     print("option: [mots|bigrammes|im [seuil]]")
