@@ -1,4 +1,5 @@
 import sys
+
 from math import log
 
 
@@ -10,30 +11,28 @@ def compte_lettres(texte):
 
 
 def frequences_relatives(lettres):
-    frequences = {}
+    fréquences = {}
     nbr_car = 0
     for lettre in lettres:
         nbr_car += lettres[lettre]
     for lettre in lettres:
-        frequences[lettre] = lettres[lettre] / nbr_car
-    return frequences
+        fréquences[lettre] = lettres[lettre] / nbr_car
+    return fréquences
 
 
-def entropie(frequence_relative):
+def entropie(fréquence_relative):
     entropie = 0.0
-    for lettre in frequence_relative:
-        entropie -= frequence_relative[lettre] * log(frequence_relative[lettre])
-    entropie = entropie / log(2)
+    for lettre in fréquence_relative:
+        entropie -= fréquence_relative[lettre] * log(fréquence_relative[lettre], 2.0)
     return entropie
 
 
-def entropie_croisee(frequence_p, frequence_q):
-    entropie_croisee = 0
-    for lettre in frequence_p:
-        if frequence_q.get(lettre, 0) != 0:  # Ici, on ignore les symboles manquants. Un lissage serait préférable
-            entropie_croisee -= frequence_p[lettre] * log(frequence_q[lettre])
-    entropie_croisee = entropie_croisee / log(2)
-    return entropie_croisee
+def entropie_croisée(fréquence_p, fréquence_q):
+    entropie_croisée = 0.0
+    for lettre in fréquence_p:
+        if fréquence_q.get(lettre, 0) != 0:  # Ici, on ignore les symboles manquants. Un lissage serait préférable
+            entropie_croisée -= fréquence_p[lettre] * log(fréquence_q[lettre], 2.0)
+    return entropie_croisée
 
 
 fichier_p = sys.argv[1]
@@ -43,12 +42,12 @@ texte_q = open(fichier_q).read()
 lettres_p = compte_lettres(texte_p)
 lettres_q = compte_lettres(texte_q)
 
-frequence_rel_p = frequences_relatives(lettres_p)
-frequence_rel_q = frequences_relatives(lettres_q)
-entropie_p = entropie(frequence_rel_p)
-entropie_q = entropie(frequence_rel_q)
+fréquence_rel_p = frequences_relatives(lettres_p)
+fréquence_rel_q = frequences_relatives(lettres_q)
+entropie_p = entropie(fréquence_rel_p)
+entropie_q = entropie(fréquence_rel_q)
 print("Entropie du texte P: ", entropie_p)
 print("Entropie du texte Q: ", entropie_q)
-entropie_croisee_v = entropie_croisee(frequence_rel_p, frequence_rel_q)
-print("Entropie croisée : ", entropie_croisee_v)
-print("Divergence D(P||Q) : ", - entropie_p + entropie_croisee_v)
+entropie_croisée_v = entropie_croisée(fréquence_rel_p, fréquence_rel_q)
+print("Entropie croisée : ", entropie_croisée_v)
+print("Divergence D(P||Q) : ", - entropie_p + entropie_croisée_v)

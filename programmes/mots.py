@@ -1,10 +1,11 @@
 import operator
 import re
 import sys
+
 from math import log
 
 
-def decoupe_mots(texte):
+def découpe_mots(texte):
     mots = re.split('[\s\-,;:!?.’\'«»()–...&‘’“”*—]+', texte)
     mots.remove('')
     return mots
@@ -19,11 +20,9 @@ def compte_mots(mots):
 
 def compte_bigrammes(mots):
     c_bigrammes = {}
-    i = 0
-    while i < (len(mots) - 1):
+    for i in range(len(mots) - 1):
         bigramme = mots[i] + ' ' + mots[i + 1]
         c_bigrammes[bigramme] = c_bigrammes.get(bigramme, 0) + 1
-        i = i + 1
     return c_bigrammes
 
 
@@ -31,7 +30,7 @@ def info_mutuelle(c_mots, c_bigrammes, taille):
     c_info_mutuelle = {}
     for bigramme in c_bigrammes.keys():
         mot = bigramme.split()
-        c_info_mutuelle[bigramme] = log(taille * c_bigrammes[bigramme] / (c_mots[mot[0]] * c_mots[mot[1]])) / log(2)
+        c_info_mutuelle[bigramme] = log(taille * c_bigrammes[bigramme] / (c_mots[mot[0]] * c_mots[mot[1]]), 2.0)
     return c_info_mutuelle
 
 
@@ -45,7 +44,7 @@ else:
 
 texte = open(fichier).read()
 texte = texte.lower()
-mots = decoupe_mots(texte)
+mots = découpe_mots(texte)
 # print(mots)
 c_mots = compte_mots(mots)
 c_bigrammes = compte_bigrammes(mots)

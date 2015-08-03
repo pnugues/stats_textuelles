@@ -1,7 +1,8 @@
 import sys
 import re
-from math import log
 import locale
+
+from math import log
 
 
 def normalise_texte(texte):
@@ -33,21 +34,20 @@ def imprime_tableau(lettres):
     return
 
 
-def frequences_relatives(lettres):
-    frequences = {}
+def fréquences_relatives(lettres):
+    fréquences = {}
     nbr_car = 0
     for lettre in lettres:
         nbr_car += lettres[lettre]
     for lettre in lettres:
-        frequences[lettre] = lettres[lettre] / nbr_car
-    return frequences
+        fréquences[lettre] = lettres[lettre] / nbr_car
+    return fréquences
 
 
-def entropie(frequence_relative):
+def entropie(fréquence_relative):
     entropie = 0.0
-    for lettre in frequence_relative:
-        entropie -= frequence_relative[lettre] * log(frequence_relative[lettre])
-    entropie = entropie / log(2)
+    for lettre in fréquence_relative:
+        entropie -= fréquence_relative[lettre] * log(fréquence_relative[lettre], 2)
     return entropie
 
 
@@ -71,12 +71,12 @@ liste_lettres.sort(key=locale.strxfrm)
 print("Liste des caractères : ", liste_lettres)
 # Pour retrouver l'entropie de Nugues (2014), page 88, enlever ce commentaire et ne pas normaliser le texte
 # del(lettres["\n"])
-frequence_rel = frequences_relatives(lettres)
-entropie = entropie(frequence_rel)
+fréquence_rel = fréquences_relatives(lettres)
+entropie = entropie(fréquence_rel)
 print("Fréquences absolues:")
 imprime_tableau(lettres)
 nbr_nonlettres = compte_nonlettres(lettres)
 print("Nbr. de caractères qui ne sont pas des lettres : ", nbr_nonlettres)
 print("Fréquences relatives:")
-imprime_tableau(frequence_rel)
+imprime_tableau(fréquence_rel)
 print("Entropie : ", entropie)
